@@ -1,5 +1,7 @@
 # Redis in Go
 
+[![Build Status](http://54.224.91.178:8080/buildStatus/icon?job=goredis)](http://54.224.91.178:8080/job/goredis/)
+
 A key value store in Go implementing some of the Redis Serialization Protocol. Built as a practice project.
 
 ## Install
