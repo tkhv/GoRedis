@@ -6,6 +6,19 @@ pipeline {
     }
 
     stages {
+        stage('Checkout') {
+            steps {
+                checkout([
+                    $class: 'GitSCM', 
+                    branches: [[name: '*/main']], 
+                    doGenerateSubmoduleConfigurations: false, 
+                    extensions: [], 
+                    submoduleCfg: [], 
+                    userRemoteConfigs: [[url: 'https://github.com/tkhv/GoRedis.git']]
+                ])
+            }
+        }
+
         stage('Clear Workspace') {
             steps {
                 deleteDir()
