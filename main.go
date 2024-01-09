@@ -32,7 +32,7 @@ func main() {
 				panic(err)
 			}
 		}
-		
-		conn.Write([]byte("+JENKINS DEPLOYED THIS FROM EC2\r\n"))
+
+		conn.Write([]byte("+PONG\r\n"))
 	}
 }

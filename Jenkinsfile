@@ -45,7 +45,7 @@ pipeline {
                                     execTimeout: 120000
                                 ),
                                 sshTransfer(
-                                    sourceFiles: 'goredis', 
+                                    sourceFiles: '*', 
                                     removePrefix: '', 
                                     remoteDirectory: '', 
                                     execCommand: 'docker build -t goredis .', 
