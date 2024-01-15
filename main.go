@@ -1,38 +1,43 @@
 package main
 
 import (
-	"fmt"
 	"io"
+	"log"
 	"net"
 )
 
-func checkErr(err error){
-	if err != nil {
-		fmt.Println(err.Error())
-		panic(err)
+func handleConn(conn net.Conn) {
+	defer conn.Close()
+	
+	for {
+		buf := make([]byte, 1024)
+		
+		_, err := conn.Read(buf)
+		if err != nil {
+			if err != io.EOF {
+				log.Println(err)
+				return
+			}
+		}
+
+		conn.Write([]byte("+PONG\r\n"))
 	}
 }
 
 func main() {
 	ln, err := net.Listen("tcp", ":6379")
-	checkErr(err)
-	fmt.Println("Listening on port 6379.")
+	if err != nil {
+		log.Println(err)
+	}
 
-	conn, err := ln.Accept()
-	checkErr(err)
-	defer conn.Close()
+	log.Println("Listening on port 6379.")
 
 	for {
-		buf := make([]byte, 1024)
-
-		_, err := conn.Read(buf)
+		conn, err := ln.Accept()
 		if err != nil {
-			if err != io.EOF {
-				fmt.Println(err.Error())
-				panic(err)
-			}
+			log.Println(err)
 		}
 
-		conn.Write([]byte("+PONG\r\n"))
+		go handleConn(conn)
 	}
 }
