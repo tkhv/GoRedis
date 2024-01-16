@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io"
 	"log"
 	"net"
 )
@@ -10,14 +9,18 @@ func handleConn(conn net.Conn) {
 	defer conn.Close()
 	
 	for {
-		buf := make([]byte, 1024)
+		reader := NewRespReader(conn)
 		
-		_, err := conn.Read(buf)
+		cmd, err := reader.ReadNext()
 		if err != nil {
-			if err != io.EOF {
-				log.Println(err)
-				return
-			}
+			log.Println(err)
+			return
+		}
+		log.Println(cmd)
+
+		if cmd[0] != '*' {
+			conn.Write([]byte("-ERR unknown command '" + cmd + "'\r\n"))
+			return
 		}
 
 		conn.Write([]byte("+PONG\r\n"))
