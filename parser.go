@@ -1,3 +1,8 @@
+/*
+ * Parses a RESP request and returns a Command struct containing
+ * the command type and any arguments.
+ */
+
 package main
 
 import (
@@ -5,11 +10,8 @@ import (
 	"log"
 	"net"
 	"strconv"
+	"strings"
 )
-type Commands struct {
-	count int
-	cmds []Command
-}
 
 type Command struct {
 	Type string
@@ -23,40 +25,41 @@ type RespReader struct {
 }
 
 /*
- * Parses a RESP request and returns a Commands struct containing
- * the number of commands and the commands themselves.
-*/
-func parseResp(conn net.Conn) (Commands) {
+ * Parses a RESP request and returns the parsed command and args.
+ */
+func parseResp(conn net.Conn) (Command) {
 	reader := NewRespReader(conn)
-	commands := Commands{count: 0, cmds: []Command{}}
 
-	for {
-		element, err := reader.NextElement()
-		if err == io.EOF {
-			break
-		}
-
-		if element == "ECHO" {
-			arg, err := reader.NextElement()
-			if err != nil {
-				log.Panic("Not enough arguments for ECHO")
-			}
-			commands.cmds = append(commands.cmds, Command{Type: element, Args: []string{arg}})
-			commands.count++
-		} else {
-			// Catch all
-			commands.cmds = append(commands.cmds, Command{Type: element})
-			commands.count++
-		}
+	element, err := reader.NextElement()
+	if err == io.EOF {
+		panic("No commands found")
 	}
 
-	return commands
+	switch element := strings.ToUpper(element); element {
+	case "ECHO":
+		arg, err := reader.NextElement()
+		if err != nil {
+			log.Panic("Not enough arguments for ECHO")
+		}
+		return Command{Type: element, Args: []string{arg}}
+	case "PING":
+		return Command{Type: element}
+	case "COMMAND":
+		arg, err := reader.NextElement()
+		if err != nil {
+			log.Panic("Not enough arguments for COMMAND")
+		}
+		return Command{Type: element, Args: []string{arg}}
+	default:
+		// Catch all
+		return Command{Type: element}
+	}
 }
 
 /* 
  * Returns a RespReader after looking for an array length.
  * Can panic if the request is malformed.
-*/
+ */
 func NewRespReader(conn net.Conn) *RespReader {
 	buf := make([]byte, 1024)
 		
@@ -83,7 +86,7 @@ func NewRespReader(conn net.Conn) *RespReader {
 /*
  * Returns the next element in the request.
  * Will return io.EOF if a CRLF is not reached.
-*/
+ */
 func (reader *RespReader) NextElement() (string, error) {
 	i, err := reader.FindCRLF()
 	if err != nil {
@@ -102,7 +105,7 @@ func (reader *RespReader) NextElement() (string, error) {
 /*
  * Returns the index of the next CRLF.
  * Will return io.EOF if a CRLF is not reached.
-*/
+ */
 func (reader *RespReader) FindCRLF() (int, error) {
 	// Advance i until CRLF, return buf[currentPos:i] and update currentPos to i+2
 	for i := reader.currentPos; i < len(reader.buffer); i++ {

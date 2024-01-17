@@ -34,8 +34,8 @@ func handleConn(conn net.Conn) {
 	
 	log.Println("New connection from ", conn.RemoteAddr())
 	for {
-		reader := parseResp(conn)
-		log.Println(reader)
-		conn.Write([]byte("+PONG\r\n"))
+		command := parseResp(conn)
+		response := handler(command)
+		conn.Write([]byte(response))
 	}
 }
