@@ -5,32 +5,10 @@ import (
 	"net"
 )
 
-func handleConn(conn net.Conn) {
-	defer conn.Close()
-	
-	for {
-		reader := NewRespReader(conn)
-		
-		cmd, err := reader.ReadNext()
-		if err != nil {
-			log.Println(err)
-			return
-		}
-		log.Println(cmd)
-
-		if cmd[0] != '*' {
-			conn.Write([]byte("-ERR unknown command '" + cmd + "'\r\n"))
-			return
-		}
-
-		conn.Write([]byte("+PONG\r\n"))
-	}
-}
-
 func main() {
 	ln, err := net.Listen("tcp", ":6379")
 	if err != nil {
-		log.Println(err)
+		log.Panic(err)
 	}
 
 	log.Println("Listening on port 6379.")
@@ -42,5 +20,22 @@ func main() {
 		}
 
 		go handleConn(conn)
+	}
+}
+
+func handleConn(conn net.Conn) {
+	defer func() {
+        if r := recover(); r != nil {
+            log.Println(conn.RemoteAddr(), " terminated.")
+        }
+    }()
+
+	defer conn.Close()
+	
+	log.Println("New connection from ", conn.RemoteAddr())
+	for {
+		reader := parseResp(conn)
+		log.Println(reader)
+		conn.Write([]byte("+PONG\r\n"))
 	}
 }
